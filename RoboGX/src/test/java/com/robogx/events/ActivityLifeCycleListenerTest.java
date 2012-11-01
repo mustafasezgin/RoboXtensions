@@ -1,6 +1,7 @@
 package com.robogx.events;
 
-import com.robogx.runner.RoboUtilsTestRunner;
+import com.robogx.events.exceptions.EventRegistrationException;
+import com.robogx.runner.RoboGXTestRunner;
 import com.xtremelabs.robolectric.Robolectric;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,11 +13,13 @@ import roboguice.activity.event.OnPauseEvent;
 import roboguice.activity.event.OnResumeEvent;
 import roboguice.event.EventManager;
 
+import static com.robogx.events.TestSubscriberObjects.InvalidTestSubscriber;
+import static com.robogx.events.TestSubscriberObjects.TestSubscriber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-@RunWith(RoboUtilsTestRunner.class)
+@RunWith(RoboGXTestRunner.class)
 public class ActivityLifeCycleListenerTest {
 
     private ActivityLifeCycleListener activityLifeCycleListener;
@@ -98,5 +101,10 @@ public class ActivityLifeCycleListenerTest {
     @Test(expected = NullPointerException.class)
     public void shouldThrowExceptionIfTryingToRegisterNullSubscriber(){
         activityLifeCycleListener.register(null);
+    }
+
+    @Test(expected = EventRegistrationException.class)
+    public void shouldThrowExceptionIfTryingToRegisterSubscriberWithPrivateMethods(){
+        activityLifeCycleListener.register(new InvalidTestSubscriber());
     }
 }

@@ -6,12 +6,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.robogx.events.exceptions.EventProcessingException;
+import com.robogx.events.exceptions.EventRegistrationException;
 import roboguice.RoboGuice;
 import roboguice.event.EventListener;
 import roboguice.event.EventManager;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
@@ -100,6 +102,9 @@ public class ActivityLifeCycleListener implements EventListener {
             for(Method method : subscriber.getClass().getDeclaredMethods()) {
                 for(Annotation annotation : method.getDeclaredAnnotations()){
                     if(LifeCycleEvent.isLifeCycleAnnotation(annotation)){
+                        if(method.getModifiers() != Modifier.PUBLIC){
+                            throw new EventRegistrationException(method, subscriber);
+                        }
                         eventMethods.put(LifeCycleEvent.eventForAnnotation(annotation), method);
                     }
                 }

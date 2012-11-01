@@ -6,8 +6,8 @@ import org.junit.runners.model.InitializationError;
 
 import java.io.File;
 
-public class RoboUtilsTestRunner extends RobolectricTestRunner{
-    public RoboUtilsTestRunner(Class<?> testClass) throws InitializationError {
+public class RoboGXTestRunner extends RobolectricTestRunner{
+    public RoboGXTestRunner(Class<?> testClass) throws InitializationError {
         super(testClass,new File("./src/test/resources"));
     }
 }
