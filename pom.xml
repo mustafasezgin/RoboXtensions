@@ -16,7 +16,7 @@
     </modules>
 
     <properties>
-        <platform.version>4.0.3_r3</platform.version>
+        <android.platform.version>2.3.3</android.platform.version>
         <source.version>1.6</source.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -30,9 +30,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>android</groupId>
+            <groupId>com.google.android</groupId>
             <artifactId>android</artifactId>
-            <version>${platform.version}</version>
+            <version>${android.platform.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
