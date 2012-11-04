@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.robolx.injector.SampleTestObjects.SampleTest;
+import static com.robolx.injector.SampleTestObjects.SampleTestWithInvalidViewId;
 import static com.robolx.injector.SampleTestObjects.SampleTestWithNoSubject;
 import static com.robolx.injector.SampleTestObjects.SampleTestWithSameSubjectAsMock;
 import static org.hamcrest.CoreMatchers.is;
@@ -36,13 +37,25 @@ public class TestFieldInjectorTest {
     }
 
     @Test
+    public void shouldInjectMocksIntoActivityIrrespectiveOfType(){
+        testFieldInjector.setupTestCase(sampleTest);
+        assertThat(sampleTest.hasMocksInjectedIntoActivity(), is(true));
+    }
+
+    @Test
+    public void shouldInjectMocksIntoTestIrrespectiveOfType(){
+        testFieldInjector.setupTestCase(sampleTest);
+        assertThat(sampleTest.hasMocksInjected(), is(true));
+    }
+
+    @Test
     public void shouldInjectSameInstanceOfMockIntoActivityAndTest(){
         testFieldInjector.setupTestCase(sampleTest);
-        assertThat(sampleTest.hasSameMockInjectedIntoTestAndActivity(), is(true));
+        assertThat(sampleTest.hasSameMocksInjectedIntoTestAndActivity(), is(true));
     }
 
     @Test(expected = TestSetupException.class)
-    public void shouldThrowExceptionIfSubjectIsNotAnnotated(){
+    public void shouldThrowExceptionIfNoSubjectIsAnnotated(){
         testFieldInjector.setupTestCase(new SampleTestWithNoSubject());
     }
 
@@ -51,5 +64,16 @@ public class TestFieldInjectorTest {
         testFieldInjector.setupTestCase(new SampleTestWithSameSubjectAsMock());
     }
 
+    @Test
+    public void shouldInjectSameViewMembersIntoTestAndActivityAfterOnCreate(){
+        testFieldInjector.setupTestCase(sampleTest);
+        sampleTest.callActivityOnCreate();
+        assertThat(sampleTest.hasSameViewsInjectedIntoActivityAndTest(), is(true));
+    }
+
+    @Test(expected = TestSetupException.class)
+    public void shouldThrowExceptionIfViewIdInTestDoesNotExistInSubject(){
+        testFieldInjector.setupTestCase(new SampleTestWithInvalidViewId());
+    }
 
 }
