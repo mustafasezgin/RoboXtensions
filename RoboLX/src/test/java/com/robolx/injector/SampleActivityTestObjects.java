@@ -14,14 +14,15 @@ import roboguice.inject.InjectView;
 
 import java.util.Date;
 
-public class SampleTestObjects {
+public class SampleActivityTestObjects {
 
     public static class SampleTestWithNoSubject {
         private Object object;
     }
 
-    public static class SampleTestWithSameSubjectAsMock {
+    public static class SampleTestWithSubjectAlsoMarkedAsMock {
         @Mock
+        @Subject
         private Object object;
     }
 
@@ -30,6 +31,14 @@ public class SampleTestObjects {
         private SampleActivity activity;
 
         @InjectView(R.id.button)
+        private Button button;
+    }
+
+    public static class SampleTestWithNoViewId{
+        @Subject
+        private SampleActivity activity;
+
+        @InjectView
         private Button button;
     }
 

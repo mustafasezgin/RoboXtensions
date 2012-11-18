@@ -1,16 +1,20 @@
 package com.robolx.injector;
 
 
-import com.robolx.injector.exception.TestSetupException;
+import com.robolx.injector.exception.InvalidViewIdInTestCaseException;
+import com.robolx.injector.exception.NoTestSubjectException;
+import com.robolx.injector.exception.NoViewIdSpecifiedException;
+import com.robolx.injector.exception.TestSubjectAlsoMarkedAsMockException;
 import com.robolx.runner.RoboLXTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.robolx.injector.SampleTestObjects.SampleTest;
-import static com.robolx.injector.SampleTestObjects.SampleTestWithInvalidViewId;
-import static com.robolx.injector.SampleTestObjects.SampleTestWithNoSubject;
-import static com.robolx.injector.SampleTestObjects.SampleTestWithSameSubjectAsMock;
+import static com.robolx.injector.SampleActivityTestObjects.SampleTest;
+import static com.robolx.injector.SampleActivityTestObjects.SampleTestWithInvalidViewId;
+import static com.robolx.injector.SampleActivityTestObjects.SampleTestWithNoSubject;
+import static com.robolx.injector.SampleActivityTestObjects.SampleTestWithNoViewId;
+import static com.robolx.injector.SampleActivityTestObjects.SampleTestWithSubjectAlsoMarkedAsMock;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -54,14 +58,14 @@ public class TestFieldInjectorTest {
         assertThat(sampleTest.hasSameMocksInjectedIntoTestAndActivity(), is(true));
     }
 
-    @Test(expected = TestSetupException.class)
+    @Test(expected = NoTestSubjectException.class)
     public void shouldThrowExceptionIfNoSubjectIsAnnotated(){
         testFieldInjector.setupTestCase(new SampleTestWithNoSubject());
     }
 
-    @Test(expected = TestSetupException.class)
+    @Test(expected = TestSubjectAlsoMarkedAsMockException.class)
     public void shouldThrowErrorIfSubjectIsAlsoMarkedAsMock(){
-        testFieldInjector.setupTestCase(new SampleTestWithSameSubjectAsMock());
+        testFieldInjector.setupTestCase(new SampleTestWithSubjectAlsoMarkedAsMock());
     }
 
     @Test
@@ -71,9 +75,14 @@ public class TestFieldInjectorTest {
         assertThat(sampleTest.hasSameViewsInjectedIntoActivityAndTest(), is(true));
     }
 
-    @Test(expected = TestSetupException.class)
+    @Test(expected = InvalidViewIdInTestCaseException.class)
     public void shouldThrowExceptionIfViewIdInTestDoesNotExistInSubject(){
         testFieldInjector.setupTestCase(new SampleTestWithInvalidViewId());
+    }
+
+    @Test(expected = NoViewIdSpecifiedException.class)
+    public void shouldThrowExceptionIfTestCaseHasInjectViewNoId(){
+        testFieldInjector.setupTestCase(new SampleTestWithNoViewId());
     }
 
 }
