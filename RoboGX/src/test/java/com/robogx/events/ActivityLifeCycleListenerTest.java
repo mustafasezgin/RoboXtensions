@@ -1,6 +1,6 @@
 package com.robogx.events;
 
-import com.robogx.events.exceptions.EventRegistrationException;
+import com.robogx.events.exceptions.EventMethodNotAccessibleException;
 import com.robogx.runner.RoboGXTestRunner;
 import com.xtremelabs.robolectric.Robolectric;
 import org.junit.Before;
@@ -103,7 +103,7 @@ public class ActivityLifeCycleListenerTest {
         activityLifeCycleListener.register(null);
     }
 
-    @Test(expected = EventRegistrationException.class)
+    @Test(expected = EventMethodNotAccessibleException.class)
     public void shouldThrowExceptionIfTryingToRegisterSubscriberWithPrivateMethods(){
         activityLifeCycleListener.register(new InvalidTestSubscriber());
     }
