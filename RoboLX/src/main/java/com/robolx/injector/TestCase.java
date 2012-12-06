@@ -1,13 +1,13 @@
 package com.robolx.injector;
 
 
-import android.app.Activity;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.robolx.annotations.Subject;
 import com.robolx.injector.exception.InvalidViewIdInTestCaseException;
 import com.robolx.injector.exception.NoTestSubjectException;
-import com.robolx.injector.exception.NoViewIdSpecifiedException;import com.robolx.injector.exception.TestSubjectAlsoMarkedAsMockException;
+import com.robolx.injector.exception.NoViewIdSpecifiedException;
+import com.robolx.injector.exception.TestSubjectAlsoMarkedAsMockException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.mockito.Mock;
 import roboguice.inject.InjectView;
@@ -17,12 +17,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-public class TestCase {
+class TestCase {
     private static final int DEFAULT_VIEW_ID = -1;
     private Field testSubjectField;
     private final Collection<Field> mockFields;
-    private Object testCaseInstance;
-    private Object testSubjectInstance;
+    private final Object testCaseInstance;
     private final Map<Integer, Field> viewFieldsInSubject;
     private final Map<Integer, Field> viewFieldsInTestCase;
 
@@ -87,7 +86,7 @@ public class TestCase {
 
     }
 
-    public Class<?> getTestSubjectClassType(){
+    public Class getTestSubjectClassType(){
         return testSubjectField.getType();
     }
 
@@ -97,18 +96,6 @@ public class TestCase {
 
     public Object getTestCaseInstance(){
         return testCaseInstance;
-    }
-
-    public Object getTestSubjectInstance() {
-        return testSubjectInstance;
-    }
-
-    public Activity getActivityTestSubject(){
-        return (Activity)testSubjectInstance;
-    }
-
-    public void setTestSubjectInstance(Object testSubjectInstance) {
-        this.testSubjectInstance = testSubjectInstance;
     }
 
     public Collection<Field> getFieldsMarkedWithMock() {

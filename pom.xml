@@ -16,7 +16,7 @@
     </modules>
 
     <properties>
-        <android.platform.version>2.3.3</android.platform.version>
+        <android.platform.version>3.0_r2</android.platform.version>
         <source.version>1.6</source.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -30,7 +30,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.google.android</groupId>
+            <groupId>android</groupId>
             <artifactId>android</artifactId>
             <version>${android.platform.version}</version>
             <scope>provided</scope>
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>com.pivotallabs</groupId>
             <artifactId>robolectric</artifactId>
-            <version>1.1</version>
+            <version>1.2-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

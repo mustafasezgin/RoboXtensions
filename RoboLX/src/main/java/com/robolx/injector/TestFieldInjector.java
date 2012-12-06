@@ -1,36 +1,56 @@
 package com.robolx.injector;
 
 
-import android.app.Activity;
+import android.content.Context;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
-import com.google.inject.Stage;
-import com.google.inject.util.Modules;
 import com.robolx.injector.exception.TestSetupException;
 import com.robolx.injector.exception.ViewFieldNotInitialisedException;
-import com.xtremelabs.robolectric.Robolectric;
+import com.robolx.utilities.ReflectionUtilities;
+import com.robolx.utilities.ReflectionUtilities.MethodInterceptor;
+import com.robolx.utilities.RobolectricUtilities;
 import org.apache.commons.lang3.ObjectUtils;
-import roboguice.RoboGuice;
+import org.mockito.cglib.proxy.MethodProxy;
 import roboguice.activity.RoboActivity;
+import roboguice.activity.RoboFragmentActivity;
 import roboguice.activity.event.OnContentChangedEvent;
 import roboguice.event.EventListener;
 import roboguice.event.EventManager;
-import roboguice.inject.ContextScope;
+import roboguice.fragment.RoboFragment;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import static com.robolx.injector.exception.TestSetupException.SetupError;
 import static org.mockito.Mockito.mock;
 
-public class TestFieldInjector {
-    private static final RoboActivity ACTIVITY_CONTEXT = new RoboActivity();
+public class TestFieldInjector extends MethodInterceptor {
+    //Cannot make this static as it will hold state across tests
+    private Context currentContextForTest;
+
+    protected static final String TAG = "TAG";
 
     private TestCase testCase;
+    private final RobolectricUtilities robolectricUtilities;
+    private final ReflectionUtilities reflectionUtilities;
+    private Object testSubjectInstance;
 
+    protected TestFieldInjector(TestCase testCase, RobolectricUtilities robolectricUtilities, ReflectionUtilities reflectionUtilities){
+        this.testCase = testCase;
+        this.robolectricUtilities = robolectricUtilities;
+        this.reflectionUtilities = reflectionUtilities;
+        this.currentContextForTest =  new RoboFragmentActivity();
+    }
 
-    public void setupTestCase(Object testCase) {
-        this.testCase = new TestCase(testCase);
+    public TestFieldInjector(){
+        this.robolectricUtilities = new RobolectricUtilities();
+        this.reflectionUtilities = new ReflectionUtilities();
+        this.currentContextForTest =  new RoboFragmentActivity();
+    }
 
+    public void setupTestCase(){
         /**
          * Needs to be done first before the injector is retrieved
          */
@@ -38,48 +58,73 @@ public class TestFieldInjector {
 
         createTestSubjectAndSetIntoTestCase();
 
-        Activity activityTestSubject = this.testCase.getActivityTestSubject();
-        Injector activityInjector = RoboGuice.getInjector(activityTestSubject);
-        activityInjector.getInstance(ContextScope.class).enter(activityTestSubject);
+        currentContextForTest = reflectionUtilities.objectIsOfAnyType(testSubjectInstance, Context.class) ?
+                (Context)testSubjectInstance : currentContextForTest;
 
-        setMocksOnTestCase(activityInjector);
+        robolectricUtilities.enterContext(currentContextForTest);
+        Injector currentContextInjector = robolectricUtilities.getInjector(currentContextForTest);
 
-        setupOnCreateListener(activityInjector);
+        setMocksOnTestCase(currentContextInjector);
 
+        setupViewsInTestSubjectIfRequired(currentContextInjector);
+    }
+
+    public void setupTestCase(Object testCase) {
+        this.testCase = new TestCase(testCase);
+        setupTestCase();
     }
 
 
 
-    private void setupOnCreateListener(Injector injector) {
-        injector.getInstance(EventManager.class).registerObserver(OnContentChangedEvent.class, new ContentChangedListener());
+    private void setupViewsInTestSubjectIfRequired(Injector injector) {
+        if(testSubjectIsActivity()){
+            injector.getInstance(EventManager.class).registerObserver(OnContentChangedEvent.class, new ContentChangedListener());
+        } else if(testSubjectIsSupportLibraryFragment()){
+            /**
+             * This restricts usage to android support library fragments :/
+             */
+            FragmentManager fragmentManager = ((RoboFragmentActivity)currentContextForTest).getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.add((RoboFragment)testSubjectInstance, TAG).commit();
+        }
+    }
 
+    private boolean testSubjectIsActivity() {
+        return reflectionUtilities.objectIsOfAnyType(testSubjectInstance, RoboActivity.class);
     }
 
     private void createTestSubjectAndSetIntoTestCase() {
-        Injector activityInjector = RoboGuice.getInjector(ACTIVITY_CONTEXT);
-        activityInjector.getInstance(ContextScope.class).enter(ACTIVITY_CONTEXT);
+        robolectricUtilities.enterContext(currentContextForTest);
+        Injector activityInjector = robolectricUtilities.getInjector(currentContextForTest);
 
-        Object testSubjectInstance = activityInjector.getInstance(testCase.getTestSubjectClassType());
-        Field testSubjectField = testCase.getTestSubjectField();
-        testSubjectField.setAccessible(true);
+        if(testSubjectIsSupportLibraryFragment()){
+            //We do this so we can hook into the onViewCreated lifecycle method to inject views
+            testSubjectInstance = reflectionUtilities.createObjectProxy(testCase.getTestSubjectClassType(), this);
+        } else {
+            testSubjectInstance = activityInjector.getInstance(testCase.getTestSubjectClassType());
+        }
 
         try {
-            testSubjectField.set(testCase.getTestCaseInstance(), testSubjectInstance);
+            reflectionUtilities.forceSetValueOnField(testCase.getTestSubjectField(),
+                                                     testCase.getTestCaseInstance(),
+                                                     testSubjectInstance);
         } catch (IllegalAccessException e) {
-            throw new TestSetupException(SetupError.COULDNT_SET_FIELD_IN_TEST, e);
+            throw new TestSetupException(TestSetupException.SetupError.COULDNT_SET_FIELD_IN_TEST, e);
         }
-        testCase.setTestSubjectInstance(testSubjectInstance);
-        activityInjector.getInstance(ContextScope.class).exit(ACTIVITY_CONTEXT);
 
+        robolectricUtilities.exitContext(currentContextForTest);
     }
 
-    private void setMocksOnTestCase(Injector activityInjector) {
+    private boolean testSubjectIsSupportLibraryFragment() {
+        return reflectionUtilities.classIsOfAssignableForm(testCase.getTestSubjectClassType(),RoboFragment.class);
+    }
+
+    private void setMocksOnTestCase(Injector currentContextInjector) {
 
         for (Field mockField : testCase.getFieldsMarkedWithMock()) {
-            Object instance = activityInjector.getInstance(mockField.getType());
-            mockField.setAccessible(true);
+            Object mockInstance = currentContextInjector.getInstance(mockField.getType());
             try {
-                mockField.set(testCase.getTestCaseInstance(), instance);
+                reflectionUtilities.forceSetValueOnField(mockField, testCase.getTestCaseInstance(), mockInstance);
             } catch (IllegalAccessException e) {
                 throw new TestSetupException(SetupError.COULDNT_SET_FIELD_IN_TEST, e);
             }
@@ -87,12 +132,17 @@ public class TestFieldInjector {
     }
 
     private void setupBindingsForMocks() {
-        RoboGuice.setBaseApplicationInjector(Robolectric.application, Stage.DEVELOPMENT,
-                Modules.override(new BindingsForMocksModule()).with(RoboGuice.newDefaultRoboModule(Robolectric.application)));
+        robolectricUtilities.setGuiceModules(new BindingsForMocksModule());
     }
 
-    private class BindingsForMocksModule extends AbstractModule {
+    @Override
+    public Object interceptMethod(Object obj, Method method, Object[] args, MethodProxy proxy) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    protected class BindingsForMocksModule extends AbstractModule {
         @Override
+        @SuppressWarnings("unchecked")
         protected void configure() {
             for (Field field : testCase.getFieldsMarkedWithMock()) {
                 bind((Class) field.getType()).toInstance(mock(field.getType()));
@@ -100,11 +150,10 @@ public class TestFieldInjector {
         }
     }
 
-    private class ContentChangedListener implements EventListener {
+    protected class ContentChangedListener implements EventListener {
 
         @Override
         public void onEvent(Object event) {
-            Object testSubjectInstance = testCase.getTestSubjectInstance();
 
             for(Integer viewIdInTestCase : testCase.getViewIds()){
 
@@ -125,5 +174,9 @@ public class TestFieldInjector {
                 }
             }
         }
+    }
+
+    public Context getCurrentContextForTest(){
+        return currentContextForTest;
     }
 }

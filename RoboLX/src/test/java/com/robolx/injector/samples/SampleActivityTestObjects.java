@@ -1,4 +1,4 @@
-package com.robolx.injector;
+package com.robolx.injector.samples;
 
 
 import android.os.Bundle;

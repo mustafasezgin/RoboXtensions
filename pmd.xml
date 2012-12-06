@@ -13,6 +13,7 @@
         <exclude name="UseConcurrentHashMap"/>
         <exclude name="AtLeastOneConstructor"/>
         <exclude name="CallSuperInConstructor"/>
+        <exclude name="DataflowAnomalyAnalysis"/>
     </rule>
 
     <rule ref="rulesets/strings.xml"/>
